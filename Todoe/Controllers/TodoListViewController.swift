@@ -13,29 +13,25 @@ class TodoListViewController: UITableViewController
 
     var itemArray = [Item]()
     
+     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let newItem = Item()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
+       
         
-        let newItem2 = Item()
-        newItem2.title = "Buy Eggos"
-        itemArray.append(newItem2)
-        
-        let newItem3 = Item()
-        newItem3.title = "Destroy Demogorgon"
-        itemArray.append(newItem3)
+        print(dataFilePath)
         
         
+        loadItems()
         
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        }
+        
+//        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+//            itemArray = items
+//        }
     
     }
 
@@ -65,11 +61,10 @@ class TodoListViewController: UITableViewController
     //MARK - TableView Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//       print("\(itemArray[indexPath.row])")
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        tableView.reloadData()
+        saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -91,9 +86,7 @@ class TodoListViewController: UITableViewController
             
             self.itemArray.append(newItem)
             
-            self.defaults.setValue(self.itemArray, forKey: "TodoListArray")
-            
-            self.tableView.reloadData()
+            self.saveItems()
             
         }
         
@@ -105,6 +98,37 @@ class TodoListViewController: UITableViewController
         alert.addAction(action)
         
         present(alert, animated: true, completion: nil)
+        
     }
+        
+    //MARK - Model Manupulation Methods
+        
+        func saveItems() {
+            
+            let encoder = PropertyListEncoder()
+            
+            do {
+                let data = try encoder.encode(itemArray)  // Here we are encoding one type of data(Array of custom objects) into data that can be written into P-list
+                try data.write(to: dataFilePath!)
+            } catch {
+                print("Error encoding item array, \(error)")
+            }
+            
+            self.tableView.reloadData()
+            
+        }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()     // When we need the data that encodes we use a P-List decoder to take out the data in the form of an array of item
+            do {
+            itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding item array, \(error)")
+            }
+        }
+    }
+    
 }
+
 
